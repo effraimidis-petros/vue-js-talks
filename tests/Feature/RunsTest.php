@@ -89,7 +89,7 @@ test('a run can be logged for today', function () {
     expect($user->runs()->sole()->ran_on->isToday())->toBeTrue();
 });
 
-test('a run that is not a real run is rejected', function (Closure $input, string $field, string $message) {
+test('a run that is not a real run is rejected', function (array $input, string $field, string $message) {
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -98,7 +98,7 @@ test('a run that is not a real run is rejected', function (Closure $input, strin
             'ran_on' => '2026-11-17',
             'distance_km' => '10',
             'duration' => '55:00',
-            ...$input(),
+            ...$input,
         ])
         ->assertSessionHasErrors([$field => $message])
         ->assertSessionDoesntHaveErrors(array_diff(['ran_on', 'distance_km', 'duration'], [$field]))
@@ -106,11 +106,11 @@ test('a run that is not a real run is rejected', function (Closure $input, strin
 
     expect($user->runs()->exists())->toBeFalse();
 })->with([
-    'zero distance' => [fn () => ['distance_km' => '0'], 'distance_km', 'Distance must be greater than 0 km.'],
-    'negative distance' => [fn () => ['distance_km' => '-5'], 'distance_km', 'Distance must be greater than 0 km.'],
-    'zero minutes and seconds' => [fn () => ['duration' => '0:00'], 'duration', 'Duration must be longer than 0:00.'],
-    'zero padded minutes' => [fn () => ['duration' => '00:00'], 'duration', 'Duration must be longer than 0:00.'],
-    'zero hours, minutes and seconds' => [fn () => ['duration' => '0:00:00'], 'duration', 'Duration must be longer than 0:00.'],
+    'zero distance' => [['distance_km' => '0'], 'distance_km', 'Distance must be greater than 0 km.'],
+    'negative distance' => [['distance_km' => '-5'], 'distance_km', 'Distance must be greater than 0 km.'],
+    'zero minutes and seconds' => [['duration' => '0:00'], 'duration', 'Duration must be longer than 0:00.'],
+    'zero padded minutes' => [['duration' => '00:00'], 'duration', 'Duration must be longer than 0:00.'],
+    'zero hours, minutes and seconds' => [['duration' => '0:00:00'], 'duration', 'Duration must be longer than 0:00.'],
     'tomorrow' => [fn () => ['ran_on' => today()->addDay()->toDateString()], 'ran_on', "The date can't be in the future."],
 ]);
 
