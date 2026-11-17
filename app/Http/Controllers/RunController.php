@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRunRequest;
 use App\Http\Resources\RunResource;
+use App\Http\Resources\WeeklySummaryResource;
+use App\Support\WeeklySummary;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,7 +14,7 @@ use Inertia\Response;
 class RunController extends Controller
 {
     /**
-     * Show the runner's runs, latest first.
+     * Show the runner's runs, latest first, with this week's summary.
      */
     public function index(Request $request): Response
     {
@@ -20,6 +22,7 @@ class RunController extends Controller
 
         return Inertia::render('runs/Index', [
             'runs' => RunResource::collection($runs)->resolve(),
+            'summary' => WeeklySummaryResource::make(WeeklySummary::forThisWeek($request->user()))->resolve(),
         ]);
     }
 

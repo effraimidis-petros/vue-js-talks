@@ -6,3 +6,10 @@ export type Run = {
     duration: string;
     pace: string;
 };
+
+export type WeeklySummary = {
+    distance: string;
+    runs: string;
+    goal: string;
+    progress: number;
+};
