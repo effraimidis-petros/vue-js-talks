@@ -92,10 +92,8 @@ class Run extends Model
             return '—';
         }
 
-        $secondsPerKm = $this->duration_seconds / $distanceKm;
-        $minutes = (int) floor($secondsPerKm / 60);
-        $seconds = (int) round(fmod($secondsPerKm, 60));
+        $secondsPerKm = (int) round($this->duration_seconds / $distanceKm);
 
-        return sprintf('%d:%02d /km', $minutes, $seconds);
+        return sprintf('%d:%02d /km', intdiv($secondsPerKm, 60), $secondsPerKm % 60);
     }
 }

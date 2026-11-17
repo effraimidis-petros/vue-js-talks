@@ -37,6 +37,18 @@ test('a run without distance shows no pace', function () {
         ->assertInertia(fn (Assert $page) => $page->where('runs.0.pace', '—'));
 });
 
+test('the pace never shows 60 seconds', function (int $distanceKm, int $durationSeconds, string $pace) {
+    $user = User::factory()->create();
+    Run::factory()->for($user)->create(['distance_km' => $distanceKm, 'duration_seconds' => $durationSeconds]);
+
+    $this->actingAs($user)
+        ->get(route('runs.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('runs.0.pace', $pace));
+})->with([
+    '10 km in 59:58' => [10, 3598, '6:00 /km'],
+    'half a second short of a minute' => [2, 719, '6:00 /km'],
+]);
+
 test('a run can be logged', function () {
     $user = User::factory()->create();
 
