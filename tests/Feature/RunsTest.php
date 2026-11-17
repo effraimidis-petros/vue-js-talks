@@ -72,6 +72,46 @@ test('the duration is stored in seconds', function (string $duration, int $secon
     'minutes and seconds' => ['44:00', 2640],
     'more than an hour in minutes' => ['75:30', 4530],
     'hours, minutes and seconds' => ['1:05:30', 3930],
+    'one second' => ['0:01', 1],
+]);
+
+test('a run can be logged for today', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('runs.store'), [
+            'ran_on' => today()->toDateString(),
+            'distance_km' => '10',
+            'duration' => '55:00',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($user->runs()->sole()->ran_on->isToday())->toBeTrue();
+});
+
+test('a run that is not a real run is rejected', function (Closure $input, string $field, string $message) {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->from(route('runs.create'))
+        ->post(route('runs.store'), [
+            'ran_on' => '2026-11-17',
+            'distance_km' => '10',
+            'duration' => '55:00',
+            ...$input(),
+        ])
+        ->assertSessionHasErrors([$field => $message])
+        ->assertSessionDoesntHaveErrors(array_diff(['ran_on', 'distance_km', 'duration'], [$field]))
+        ->assertRedirect(route('runs.create'));
+
+    expect($user->runs()->exists())->toBeFalse();
+})->with([
+    'zero distance' => [fn () => ['distance_km' => '0'], 'distance_km', 'Distance must be greater than 0 km.'],
+    'negative distance' => [fn () => ['distance_km' => '-5'], 'distance_km', 'Distance must be greater than 0 km.'],
+    'zero minutes and seconds' => [fn () => ['duration' => '0:00'], 'duration', 'Duration must be longer than 0:00.'],
+    'zero padded minutes' => [fn () => ['duration' => '00:00'], 'duration', 'Duration must be longer than 0:00.'],
+    'zero hours, minutes and seconds' => [fn () => ['duration' => '0:00:00'], 'duration', 'Duration must be longer than 0:00.'],
+    'tomorrow' => [fn () => ['ran_on' => today()->addDay()->toDateString()], 'ran_on', "The date can't be in the future."],
 ]);
 
 test('the duration must be mm:ss or h:mm:ss', function (string $duration) {

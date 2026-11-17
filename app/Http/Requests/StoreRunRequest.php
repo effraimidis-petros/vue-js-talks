@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\LongerThanZeroDuration;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -15,9 +16,9 @@ class StoreRunRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ran_on' => ['required', 'date'],
-            'distance_km' => ['required', 'numeric', 'max:999'],
-            'duration' => ['required', 'string', 'regex:/^(\d+:)?\d{1,2}:[0-5]\d$/'],
+            'ran_on' => ['required', 'date', 'before_or_equal:today'],
+            'distance_km' => ['required', 'numeric', 'gt:0', 'max:999'],
+            'duration' => ['bail', 'required', 'string', 'regex:/^(\d+:)?\d{1,2}:[0-5]\d$/', new LongerThanZeroDuration],
         ];
     }
 
@@ -29,6 +30,8 @@ class StoreRunRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'ran_on.before_or_equal' => __("The date can't be in the future."),
+            'distance_km.gt' => __('Distance must be greater than 0 km.'),
             'duration.regex' => __('Use the format mm:ss or h:mm:ss.'),
         ];
     }
