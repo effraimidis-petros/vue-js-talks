@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Database\Factories\RunFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -59,7 +60,7 @@ class Run extends Model
     #[Scope]
     protected function ranThisWeek(Builder $query): void
     {
-        $query->whereBetween('ran_on', [now()->startOfWeek(), now()->endOfWeek()]);
+        $query->whereBetween('ran_on', [now()->startOfWeek(CarbonInterface::MONDAY), now()->endOfWeek(CarbonInterface::SUNDAY)]);
     }
 
     /**

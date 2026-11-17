@@ -106,7 +106,8 @@ describe('the weekly summary', function () {
         $this->user = User::factory()->create();
     });
 
-    test('it adds up only the runner\'s runs from Monday to Sunday', function () {
+    test('it adds up only the runner\'s runs from Monday to Sunday', function (string $locale) {
+        app()->setLocale($locale);
         Run::factory()->for($this->user)->create(['ran_on' => '2026-11-15', 'distance_km' => 10]);
         Run::factory()->for($this->user)->create(['ran_on' => '2026-11-16', 'distance_km' => 8]);
         Run::factory()->for($this->user)->create(['ran_on' => '2026-11-22', 'distance_km' => 6.5]);
@@ -120,7 +121,7 @@ describe('the weekly summary', function () {
                 ->where('summary.runs', '2 runs')
                 ->where('summary.goal', '14.50 / 40 km')
                 ->where('summary.progress', 36.25));
-    });
+    })->with(['en', 'en_US']);
 
     test('it counts runs and caps the goal bar', function (array $distances, string $distance, string $runs, string $goal, float|int $progress) {
         foreach ($distances as $km) {
