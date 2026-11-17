@@ -99,3 +99,60 @@ test('date, distance and duration are required', function () {
 
     expect($user->runs()->exists())->toBeFalse();
 });
+
+describe('the weekly summary', function () {
+    beforeEach(function () {
+        $this->travelTo('2026-11-18 10:00:00');
+        $this->user = User::factory()->create();
+    });
+
+    test('it adds up only the runner\'s runs from Monday to Sunday', function () {
+        Run::factory()->for($this->user)->create(['ran_on' => '2026-11-15', 'distance_km' => 10]);
+        Run::factory()->for($this->user)->create(['ran_on' => '2026-11-16', 'distance_km' => 8]);
+        Run::factory()->for($this->user)->create(['ran_on' => '2026-11-22', 'distance_km' => 6.5]);
+        Run::factory()->for($this->user)->create(['ran_on' => '2026-11-23', 'distance_km' => 5]);
+        Run::factory()->create(['ran_on' => '2026-11-18', 'distance_km' => 20]);
+
+        $this->actingAs($this->user)
+            ->get(route('runs.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('summary.distance', '14.50 km')
+                ->where('summary.runs', '2 runs')
+                ->where('summary.goal', '14.50 / 40 km')
+                ->where('summary.progress', 36.25));
+    });
+
+    test('it counts runs and caps the goal bar', function (array $distances, string $distance, string $runs, string $goal, float|int $progress) {
+        foreach ($distances as $km) {
+            Run::factory()->for($this->user)->create(['ran_on' => '2026-11-17', 'distance_km' => $km]);
+        }
+
+        $this->actingAs($this->user)
+            ->get(route('runs.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('summary.distance', $distance)
+                ->where('summary.runs', $runs)
+                ->where('summary.goal', $goal)
+                ->where('summary.progress', $progress));
+    })->with([
+        'an empty week' => [[], '0.00 km', '0 runs', '0.00 / 40 km', 0],
+        'a single run' => [[5], '5.00 km', '1 run', '5.00 / 40 km', 12.5],
+        'past the goal' => [[25, 20], '45.00 km', '2 runs', '45.00 / 40 km', 100],
+    ]);
+
+    test('a run logged today shows up in it', function () {
+        $this->actingAs($this->user)
+            ->post(route('runs.store'), [
+                'ran_on' => '2026-11-18',
+                'distance_km' => '10',
+                'duration' => '52:30',
+            ])
+            ->assertRedirect(route('runs.index'));
+
+        $this->actingAs($this->user)
+            ->get(route('runs.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('summary.distance', '10.00 km')
+                ->where('summary.runs', '1 run'));
+    });
+});

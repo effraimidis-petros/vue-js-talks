@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Database\Factories\RunFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +51,15 @@ class Run extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @param  Builder<Run>  $query
+     */
+    #[Scope]
+    protected function ranThisWeek(Builder $query): void
+    {
+        $query->whereBetween('ran_on', [now()->startOfWeek(), now()->endOfWeek()]);
     }
 
     /**
